@@ -7,6 +7,7 @@
     "iosfwd": "cpp",
     "utility": "cpp",
     "algorithm": "cpp",
-    "initializer_list": "cpp"
+    "initializer_list": "cpp",
+    "type_traits": "cpp"
   }
 }

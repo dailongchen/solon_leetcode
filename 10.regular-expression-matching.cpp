@@ -30,7 +30,13 @@ private:
             return string(ss.str());
         }
 
-        bool Matching(const string& str, int index, int& optionalFrom, int& optionalTo) {
+        bool operator==(const Pattern& other) const {
+            return m_leading == other.m_leading &&
+                   m_optionalChar == other.m_optionalChar &&
+                   m_repeatOptionalChar == other.m_repeatOptionalChar;
+        }
+
+        bool Matching(const string& str, int index, int& optionalFrom, int& optionalTo) const {
             if (m_leading.length() > 0) {
                 if (index + m_leading.length() > str.length()) {
                     return false;
@@ -47,6 +53,9 @@ private:
 
             if (!m_repeatOptionalChar) {
                 if (m_optionalChar == '.') {
+                    if (index + 1 > str.length()) {
+                        return false;
+                    }
                     optionalFrom = index + 1;
                     optionalTo = index + 1;
                 } else {
@@ -56,7 +65,7 @@ private:
             } else {
                 if (m_optionalChar == '.') {
                     optionalFrom = index;
-                    optionalTo = str.length();
+                    optionalTo = index > str.length() ? index : str.length();
                 } else {
                     optionalFrom = index;
 
@@ -70,38 +79,6 @@ private:
             }
 
             return true;
-        }
-
-        vector<int> FindLeadinginRange(const string& str, int from, int to) {
-            vector<int> founds;
-            for (auto index = from; index <= to; index++) {
-                if (m_leading.length() == 0) {
-                    founds.push_back(index);
-                    continue;
-                }
-
-                auto iter = search(str.begin() + index,
-                                  str.begin() + to,
-                                  m_leading.begin(),
-                                  m_leading.end());
-                if (iter != str.end()) {
-                    auto pos = distance(str.begin(), iter);
-                    founds.push_back(pos);
-                    index = pos + 1;
-                } else {
-                    break;
-                }
-            }
-
-            if (!founds.empty()) {
-                cout << "found leading: (" << from << "," << to << "): ";
-                for (auto i : founds) {
-                    cout << i << ",";
-                }
-                cout << endl;
-            }
-
-            return founds;
         }
     };
 
@@ -143,12 +120,12 @@ public:
     bool isMatch(string s, string p) {
         auto patterns = getPatterns(p);
         if (patterns.size() == 0) {
-            return false;
+            return s.length() == 0;
         }
 
-        for (auto& item : patterns) {
-            cout << string(item) << endl;
-        }
+        // for (auto& item : patterns) {
+        //     cout << string(item);
+        // }
 
         typedef struct _PendingItem_ {
             int OptionalFrom;
@@ -164,22 +141,22 @@ public:
         auto currentOptionalTo = 0;
 
         while (true) {
-            cout << currentPatternIndex << " currentOptionalFrom " << currentOptionalFrom << " currentOptionalTo " << currentOptionalTo << endl;
+            // cout << currentPatternIndex << " currentOptionalFrom " << currentOptionalFrom << " currentOptionalTo " << currentOptionalTo << endl;
             auto isLastPattern = currentPatternIndex == (patterns.size() - 1);
 
             auto currentPattern = patterns[currentPatternIndex];
-            auto possibleStarts = currentPattern.FindLeadinginRange(s, currentOptionalFrom, currentOptionalTo);
 
             pendingItemList[currentPatternIndex].clear();
 
             auto canMatch = false;
-            for(auto index : possibleStarts) {
+            for(auto index = currentOptionalFrom;
+                index <= currentOptionalTo;
+                index++) {
                 int optionalFrom;
                 int optionalTo;
 
                 if (currentPattern.Matching(s, index, optionalFrom, optionalTo)) {
-
-                    cout << currentPatternIndex << " " << index << " " << optionalFrom << " " << optionalTo << endl;
+                    // cout << currentPatternIndex << " " << index << " " << optionalFrom << " " << optionalTo << endl;
                     if (isLastPattern) {
                         if (optionalTo >= s.length()) {
                             return true;
